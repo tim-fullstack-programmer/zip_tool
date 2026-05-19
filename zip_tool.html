@@ -1,162 +1,627 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Локальный ZIP Архиватор</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Локальный ZIP Архиватор</title>
+    <script src="vue_global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            background-color: #D3D3D3;
+            padding: 15px;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .panel-card {
+            background: #A7EF67;
+            padding: 20px;
+            border: 2px solid black;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+        }
+        h2, h3 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 24px;
+            border: 2px solid black;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #90ccf7;
+            transition: background 0.2s;
+        }
+        .tab.active {
+            background: #fff;
+        }
+        .tab:hover:not(.active) {
+            background: #76b5e0;
+        }
+        .content-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .section-card {
+            background: #90ccf7;
+            padding: 15px;
+            border: 2px solid black;
+            border-radius: 15px;
+        }
+        .section-card h3 {
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+        .dropzone {
+            border: 2px dashed black;
+            border-radius: 14px;
+            padding: 28px;
+            text-align: center;
+            background: rgba(255,255,255,0.4);
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .dropzone.drag {
+            background: rgba(255,255,255,0.7);
+            border-color: #2563eb;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        button, .btn-label {
+            padding: 8px 16px;
+            border: 2px solid black;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            background: #fff;
+            transition: background 0.2s;
+        }
+        button:hover, .btn-label:hover {
+            background: #f0f0f0;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        button.primary {
+            background: #90ccf7;
+        }
+        button.primary:hover {
+            background: #76b5e0;
+        }
+        .text-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid black;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: #fff;
+        }
+        .progress-box {
+            margin-top: 14px;
+            padding: 10px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 10px;
+            border: 1px solid black;
+        }
+        .progress-bar {
+            height: 8px;
+            background: #ccc;
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid black;
+        }
+        .progress-bar span {
+            display: block;
+            height: 100%;
+            width: 0%;
+            background: #2563eb;
+            transition: width 0.2s;
+        }
+        .progress-label {
+            margin-top: 6px;
+            font-size: 12px;
+            text-align: right;
+            font-weight: bold;
+        }
+        .tree {
+            margin-top: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.4);
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid black;
+        }
+        .tree-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 0;
+            cursor: default;
+        }
+        .tree-item:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        .tree-folder {
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .tree-indent {
+            margin-left: 20px;
+        }
+        .context-menu {
+            position: fixed;
+            background: #A7EF67;
+            border: 2px solid black;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            overflow: hidden;
+        }
+        .context-menu button {
+            display: block;
+            width: 100%;
+            padding: 10px 18px;
+            background: none;
+            border: none;
+            border-bottom: 1px solid black;
+            text-align: left;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .context-menu button:last-child {
+            border-bottom: none;
+        }
+        .context-menu button:hover {
+            background: #90ccf7;
+        }
+        footer {
+            text-align: center;
+            font-size: 12px;
+            color: #555;
+            margin-top: 10px;
+        }
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --bg:#f6f7fb;--panel:#fff;--panel-soft:#fafafa;--text:#0f172a;--muted:#6b7280;
-      --border:#e5e7eb;--accent:#2563eb;--accent-soft:rgba(37,99,235,.08);
-    }
-    [data-theme="dark"]{
-      --bg:#0b1020;--panel:#0f172a;--panel-soft:#111827;--text:#e5e7eb;--muted:#9ca3af;
-      --border:#1f2937;--accent:#60a5fa;--accent-soft:rgba(96,165,250,.12);
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text)}
-
-    .app{max-width:1200px;margin:0 auto;padding:28px}
-    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-    header h1{font-size:20px;font-weight:700;letter-spacing:-.02em}
-
-    .theme-toggle{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:6px 10px;cursor:pointer;font-size:18px}
-
-    .tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:6px;width:fit-content;margin-bottom:24px}
-    .tab{padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:500;color:var(--muted)}
-    .tab.active{background:var(--accent-soft);color:var(--accent)}
-
-    .panel{display:none;grid-template-columns:1.2fr .8fr;gap:24px}
-    .panel.active{display:grid}
-
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px}
-    .card h3{margin:0 0 12px;font-size:14px;font-weight:600}
-
-    .dropzone{border:2px dashed var(--border);border-radius:14px;padding:32px;text-align:center;background:var(--panel-soft)}
-    .dropzone.drag{border-color:var(--accent);background:var(--accent-soft)}
-    input[type=file]{display:none}
-
-    .actions{display:flex;gap:10px;justify-content:center;margin-top:14px}
-    button,.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-weight:500;cursor:pointer}
-    button.secondary,.btn.secondary{background:transparent;color:var(--accent);border:1px solid var(--accent)}
-    button:disabled{opacity:.5;cursor:not-allowed}
-
-    .progress{margin-top:14px}
-    .progress-bar{height:6px;background:var(--border);border-radius:999px;overflow:hidden}
-    .progress-bar span{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
-    .progress-label{margin-top:6px;font-size:12px;color:var(--muted);text-align:right}
-
-    .tree{font-size:13px;line-height:1.6;user-select:none}
-    .tree-item{display:flex;align-items:center;gap:6px;padding:2px 0;cursor:default}
-    .tree-item:hover{background:var(--accent-soft)}
-    .tree-folder{font-weight:600;cursor:pointer}
-    .tree-indent{margin-left:18px}
-
-    .context{position:fixed;background:var(--panel);border:1px solid var(--border);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.15);z-index:1000;display:none}
-    .context button{display:block;width:100%;padding:8px 14px;background:none;border:none;text-align:left;color:var(--text);cursor:pointer}
-    .context button:hover{background:var(--accent-soft)}
-
-    footer{margin-top:40px;text-align:center;font-size:12px;color:var(--muted)}
-    @media(max-width:900px){.panel.active{grid-template-columns:1fr}}
-  </style>
+        /* Mobile */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .content-area {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 1.3rem;
+            }
+            .tabs {
+                gap: 6px;
+            }
+            .tab {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+            .dropzone {
+                padding: 20px;
+            }
+            button, .btn-label {
+                padding: 10px 14px;
+                font-size: 0.85rem;
+            }
+            .tree {
+                max-height: 250px;
+            }
+        }
+        @media (max-width: 480px) {
+            .panel-card {
+                padding: 15px;
+                border-radius: 15px;
+            }
+            .section-card {
+                padding: 12px;
+            }
+            .btn-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            button, .btn-label {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <h1>Локальный ZIP Архиватор</h1>
-    <button class="theme-toggle" id="themeToggle">🌙</button>
-  </header>
+<div id="app" class="container">
+    <div class="panel-card">
+        <h1>Локальный ZIP Архиватор</h1>
 
-  <div class="tabs">
-    <div class="tab active" data-tab="create">Создать</div>
-    <div class="tab" data-tab="extract">Извлечь</div>
-  </div>
-
-  <section class="panel active" id="create">
-    <div class="card">
-      <h3>Файлы</h3>
-      <div class="dropzone" id="createDrop">
-        <strong>Перетащите файлы или папки</strong>
-        <div class="actions">
-          <label class="btn secondary">Файлы<input type="file" multiple id="filePick"></label>
-          <label class="btn secondary">Папка<input type="file" webkitdirectory id="folderPick"></label>
+        <div class="tabs">
+            <div 
+                class="tab" 
+                :class="{ active: activeTab === 'create' }" 
+                @click="activeTab = 'create'"
+            >Создать архив</div>
+            <div 
+                class="tab" 
+                :class="{ active: activeTab === 'extract' }" 
+                @click="activeTab = 'extract'"
+            >Извлечь архив</div>
         </div>
-      </div>
-      <div class="tree" id="fileTree"></div>
-    </div>
-    <div class="card">
-      <h3>Экспорт</h3>
-      <input id="zipName" value="archive.zip" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text)">
-      <div class="progress" id="createProgress" hidden>
-        <div class="progress-bar"><span></span></div>
-        <div class="progress-label"></div>
-      </div>
-      <button id="buildZip" disabled style="margin-top:14px">Создать ZIP</button>
-    </div>
-  </section>
 
-  <section class="panel" id="extract">
-    <div class="card">
-      <h3>Архив</h3>
-      <div class="dropzone" id="extractDrop">
-        <strong>ZIP файл</strong>
-        <div class="actions">
-          <label class="btn secondary">Выбрать<input type="file" accept=".zip" id="zipPick"></label>
+        <!-- CREATE PANEL -->
+        <div v-if="activeTab === 'create'" class="content-area">
+            <div class="section-card">
+                <h3>Файлы для архива</h3>
+                <div 
+                    class="dropzone" 
+                    :class="{ drag: createDrag }"
+                    @dragover.prevent="createDrag = true"
+                    @dragleave.prevent="createDrag = false"
+                    @drop.prevent="onCreateDrop"
+                >
+                    <strong>Перетащите файлы или папки сюда</strong>
+                    <div class="btn-row">
+                        <label class="btn-label">
+                            Выбрать файлы
+                            <input type="file" multiple @change="onFilePick">
+                        </label>
+                        <label class="btn-label">
+                            Выбрать папку
+                            <input type="file" webkitdirectory @change="onFolderPick">
+                        </label>
+                    </div>
+                </div>
+                <div class="tree" v-if="fileTree.length">
+                    <div v-for="item in fileTree" :key="item.path" class="tree-item">
+                        <span v-if="item.type === 'folder'" class="tree-folder" @click="item.expanded = !item.expanded">
+                            {{ item.expanded ? '📂' : '📁' }} {{ item.name }}
+                        </span>
+                        <span v-else>
+                            📄 {{ item.name }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h3>Создание архива</h3>
+                <input 
+                    class="text-input" 
+                    v-model="zipName" 
+                    placeholder="Имя архива (например: archive.zip)"
+                >
+                <div class="progress-box" v-if="createProgress > 0 && createProgress < 100">
+                    <div class="progress-bar"><span :style="{ width: createProgress + '%' }"></span></div>
+                    <div class="progress-label">{{ createLabel }}</div>
+                </div>
+                <div class="btn-row" style="margin-top: 14px;">
+                    <button 
+                        class="primary" 
+                        @click="buildZip" 
+                        :disabled="!files.size"
+                    >
+                        Создать ZIP
+                    </button>
+                    <button @click="clearFiles" :disabled="!files.size">Очистить</button>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="tree" id="zipTree"></div>
-    </div>
-    <div class="card">
-      <h3>Извлечение</h3>
-      <div class="progress" id="extractProgress" hidden>
-        <div class="progress-bar"><span></span></div>
-        <div class="progress-label"></div>
-      </div>
-      <button id="downloadAll" disabled>Скачать всё</button>
-    </div>
-  </section>
 
-  <footer>Локальный ZIP Архиватор. Файлы не покидают браузер</footer>
+        <!-- EXTRACT PANEL -->
+        <div v-if="activeTab === 'extract'" class="content-area">
+            <div class="section-card">
+                <h3>ZIP архив</h3>
+                <div 
+                    class="dropzone" 
+                    :class="{ drag: extractDrag }"
+                    @dragover.prevent="extractDrag = true"
+                    @dragleave.prevent="extractDrag = false"
+                    @drop.prevent="onExtractDrop"
+                >
+                    <strong>Перетащите ZIP файл сюда</strong>
+                    <div class="btn-row">
+                        <label class="btn-label">
+                            Выбрать ZIP
+                            <input type="file" accept=".zip" @change="onZipPick">
+                        </label>
+                    </div>
+                </div>
+                <div class="tree" v-if="zipTree.length">
+                    <div 
+                        v-for="item in zipTree" 
+                        :key="item.path" 
+                        class="tree-item"
+                        @contextmenu.prevent="onContextMenu($event, item)"
+                    >
+                        <span v-if="item.type === 'folder'" class="tree-folder" @click="item.expanded = !item.expanded">
+                            {{ item.expanded ? '📂' : '📁' }} {{ item.name }}
+                        </span>
+                        <span v-else>📄 {{ item.name }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h3>Извлечение</h3>
+                <div class="progress-box" v-if="extractProgress > 0 && extractProgress < 100">
+                    <div class="progress-bar"><span :style="{ width: extractProgress + '%' }"></span></div>
+                    <div class="progress-label">{{ extractLabel }}</div>
+                </div>
+                <div class="btn-row" style="margin-top: 14px;">
+                    <button 
+                        class="primary" 
+                        @click="downloadAll" 
+                        :disabled="!loadedZip"
+                    >
+                        Скачать всё
+                    </button>
+                    <button @click="clearZip" :disabled="!loadedZip">Очистить</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>Локальный ZIP Архиватор. Файлы не покидают браузер.</footer>
+    </div>
+
+    <!-- Context Menu -->
+    <div 
+        class="context-menu" 
+        ref="ctxMenu"
+        :style="{ 
+            display: ctxVisible ? 'block' : 'none',
+            left: ctxX + 'px',
+            top: ctxY + 'px'
+        }"
+    >
+        <button @click="ctxDownload">Скачать</button>
+        <button @click="ctxDelete">Удалить</button>
+    </div>
 </div>
 
-<div class="context" id="contextMenu">
-  <button id="ctxDownload">Скачать</button>
-  <button id="ctxDelete">Удалить</button>
-</div>
-
+<script src="vue_global.js"></script>
 <script>
-const root=document.documentElement;const btnTheme=document.getElementById('themeToggle');
-root.dataset.theme=localStorage.getItem('zip-theme')||'light';
-btnTheme.textContent=root.dataset.theme==='dark'?'☀️':'🌙';
-btnTheme.onclick=()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';localStorage.setItem('zip-theme',root.dataset.theme);btnTheme.textContent=root.dataset.theme==='dark'?'☀️':'🌙'};
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));t.classList.add('active');document.getElementById(t.dataset.tab).classList.add('active')});
-function updateProgress(w,p,l){w.hidden=false;w.querySelector('span').style.width=p+'%';w.querySelector('.progress-label').textContent=l;if(p>=100)setTimeout(()=>w.hidden=true,800)}
-function buildTree(container, tree, level=0){for(const [name,node] of Object.entries(tree)){const row=document.createElement('div');row.className='tree-item'+(level?' tree-indent':'');if(node._file){row.textContent='📄 '+name;row.dataset.path=node._file.name;row.dataset.type='file'}else{row.innerHTML='<span class="tree-folder">📁 '+name+'</span>';row.dataset.type='folder';row.onclick=()=>child.hidden=!child.hidden}
-container.appendChild(row);if(!node._file){const child=document.createElement('div');child.hidden=false;container.appendChild(child);buildTree(child,node,level+1)}}}
-const files=new Map();const fileTree=document.getElementById('fileTree');const buildBtn=document.getElementById('buildZip');const createProgress=document.getElementById('createProgress');
-function rebuildCreateTree(){const t={};files.forEach((f,p)=>{p.split('/').reduce((a,c,i,arr)=>a[c]||(a[c]=i===arr.length-1?{_file:f}:{}) ,t)});fileTree.innerHTML='';buildTree(fileTree,t);buildBtn.disabled=!files.size}
-function addFiles(list){[...list].forEach(f=>files.set(f.webkitRelativePath||f.name,f));rebuildCreateTree()}
-document.getElementById('filePick').onchange=e=>addFiles(e.target.files);document.getElementById('folderPick').onchange=e=>addFiles(e.target.files);
-buildBtn.onclick=async()=>{const zip=new JSZip();files.forEach((f,p)=>zip.file(p,f));const blob=await zip.generateAsync({type:'blob'},m=>updateProgress(createProgress,m.percent|0,'Сжатие '+(m.percent|0)+'%'));saveAs(blob,document.getElementById('zipName').value||'archive.zip')};
-let loadedZip;const zipTree=document.getElementById('zipTree');const extractProgress=document.getElementById('extractProgress');const downloadAll=document.getElementById('downloadAll');
-document.getElementById('zipPick').onchange=async e=>{loadedZip=await JSZip.loadAsync(e.target.files[0],m=>updateProgress(extractProgress,m.percent|0,'Чтение '+(m.percent|0)+'%'));const t={};Object.values(loadedZip.files).forEach(f=>!f.dir&&f.name.split('/').reduce((a,c,i,arr)=>a[c]||(a[c]=i===arr.length-1?{_file:f}:{}) ,t));zipTree.innerHTML='';buildTree(zipTree,t);downloadAll.disabled=false};
-downloadAll.onclick=async()=>{const z=new JSZip();for(const f of Object.values(loadedZip.files))if(!f.dir)z.file(f.name,await f.async('blob'));saveAs(await z.generateAsync({type:'blob'}),'extracted.zip')};
-const ctx=document.getElementById('contextMenu');let ctxTarget=null;
-document.addEventListener('contextmenu',e=>{const item=e.target.closest('.tree-item');if(!item||item.dataset.type!=='file')return; e.preventDefault();ctxTarget=item;ctx.style.left=e.pageX+'px';ctx.style.top=e.pageY+'px';ctx.style.display='block'});
-document.addEventListener('click',()=>ctx.style.display='none');
-document.getElementById('ctxDownload').onclick=async()=>{const p=ctxTarget.dataset.path;const f=loadedZip?loadedZip.file(p):files.get(p);if(f){const blob=loadedZip?await f.async('blob'):f;saveAs(blob,p.split('/').pop())}};
-document.getElementById('ctxDelete').onclick=()=>{if(!loadedZip&&ctxTarget){files.delete(ctxTarget.dataset.path);rebuildCreateTree()}};
-function dnd(z,cb){['dragover','dragenter'].forEach(e=>z.addEventListener(e,ev=>{ev.preventDefault();z.classList.add('drag')}));['dragleave','drop'].forEach(e=>z.addEventListener(e,ev=>{ev.preventDefault();z.classList.remove('drag')}));z.addEventListener('drop',e=>cb(e.dataTransfer.files))}
-dnd(document.getElementById('createDrop'),addFiles);
-dnd(document.getElementById('extractDrop'),f=>document.getElementById('zipPick').files=f);
+const { createApp, ref, computed } = Vue;
+
+createApp({
+    setup() {
+        const activeTab = ref('create');
+        const files = ref(new Map());
+        const createDrag = ref(false);
+        const createProgress = ref(0);
+        const createLabel = ref('');
+        const zipName = ref('archive.zip');
+        const loadedZip = ref(null);
+        const extractDrag = ref(false);
+        const extractProgress = ref(0);
+        const extractLabel = ref('');
+        const ctxVisible = ref(false);
+        const ctxX = ref(0);
+        const ctxY = ref(0);
+        const ctxItem = ref(null);
+        const fileTree = computed(() => {
+            const tree = {};
+            files.value.forEach((file, path) => {
+                const parts = path.split('/').filter(Boolean);
+                parts.reduce((acc, part, idx) => {
+                    if (idx === parts.length - 1) {
+                        acc[part] = { _file: file, name: part, path, type: 'file' };
+                    } else {
+                        acc[part] = acc[part] || { name: part, type: 'folder', expanded: true, children: {} };
+                    }
+                    return acc[part]?.children || acc[part];
+                }, tree);
+            });
+            return flattenTree(tree);
+        });
+
+        const zipTree = computed(() => {
+            if (!loadedZip.value) return [];
+            const tree = {};
+            Object.values(loadedZip.value.files).forEach(file => {
+                if (file.dir) return;
+                const parts = file.name.split('/').filter(Boolean);
+                parts.reduce((acc, part, idx) => {
+                    if (idx === parts.length - 1) {
+                        acc[part] = { _file: file, name: part, path: file.name, type: 'file' };
+                    } else {
+                        acc[part] = acc[part] || { name: part, type: 'folder', expanded: true, children: {} };
+                    }
+                    return acc[part]?.children || acc[part];
+                }, tree);
+            });
+            return flattenTree(tree);
+        });
+
+        function flattenTree(tree, level = 0) {
+            const result = [];
+            for (const [name, node] of Object.entries(tree)) {
+                result.push({ ...node, level, name });
+                if (node.children) {
+                    result.push(...flattenTree(node.children, level + 1));
+                }
+            }
+            return result;
+        }
+
+        function addFiles(fileList) {
+            [...fileList].forEach(f => {
+                const path = f.webkitRelativePath || f.name;
+                files.value.set(path, f);
+            });
+        }
+
+        function onFilePick(e) { addFiles(e.target.files); }
+        function onFolderPick(e) { addFiles(e.target.files); }
+        function onCreateDrop(e) {
+            createDrag.value = false;
+            addFiles(e.dataTransfer.files);
+        }
+
+        async function buildZip() {
+            const zip = new JSZip();
+            files.value.forEach((file, path) => zip.file(path, file));
+            createProgress.value = 0;
+            const blob = await zip.generateAsync(
+                { type: 'blob' },
+                meta => {
+                    createProgress.value = meta.percent | 0;
+                    createLabel.value = 'Сжатие ' + (meta.percent | 0) + '%';
+                }
+            );
+            createProgress.value = 100;
+            createLabel.value = 'Готово!';
+            saveAs(blob, zipName.value || 'archive.zip');
+            setTimeout(() => createProgress.value = 0, 1000);
+        }
+
+        function clearFiles() {
+            files.value = new Map();
+        }
+
+        async function onZipPick(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            extractProgress.value = 0;
+            loadedZip.value = await JSZip.loadAsync(
+                file,
+                meta => {
+                    extractProgress.value = meta.percent | 0;
+                    extractLabel.value = 'Чтение ' + (meta.percent | 0) + '%';
+                }
+            );
+            extractProgress.value = 100;
+            extractLabel.value = 'Готово!';
+            setTimeout(() => extractProgress.value = 0, 1000);
+        }
+
+        function onExtractDrop(e) {
+            extractDrag.value = false;
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                const fakeEvent = { target: { files } };
+                onZipPick(fakeEvent);
+            }
+        }
+
+        async function downloadAll() {
+            if (!loadedZip.value) return;
+            const zip = new JSZip();
+            for (const f of Object.values(loadedZip.value.files)) {
+                if (!f.dir) zip.file(f.name, await f.async('blob'));
+            }
+            saveAs(await zip.generateAsync({ type: 'blob' }), 'extracted.zip');
+        }
+
+        function clearZip() {
+            loadedZip.value = null;
+        }
+
+        function onContextMenu(e, item) {
+            if (item.type !== 'file') return;
+            e.preventDefault();
+            ctxItem.value = item;
+            ctxX.value = e.pageX;
+            ctxY.value = e.pageY;
+            ctxVisible.value = true;
+        }
+
+        async function ctxDownload() {
+            ctxVisible.value = false;
+            const item = ctxItem.value;
+            if (!item) return;
+            if (loadedZip.value) {
+                const f = loadedZip.value.file(item.path);
+                if (f) saveAs(await f.async('blob'), item.name);
+            } else {
+                const f = files.value.get(item.path);
+                if (f) saveAs(f, item.name);
+            }
+        }
+
+        function ctxDelete() {
+            ctxVisible.value = false;
+            const item = ctxItem.value;
+            if (!item || loadedZip.value) return;
+            files.value.delete(item.path);
+        }
+
+        // Close context menu on click elsewhere
+        document.addEventListener('click', () => { ctxVisible.value = false; });
+
+        return {
+            activeTab,
+            files,
+            createDrag,
+            createProgress,
+            createLabel,
+            zipName,
+            loadedZip,
+            extractDrag,
+            extractProgress,
+            extractLabel,
+            fileTree,
+            zipTree,
+            ctxVisible,
+            ctxX,
+            ctxY,
+            onFilePick,
+            onFolderPick,
+            onCreateDrop,
+            buildZip,
+            clearFiles,
+            onZipPick,
+            onExtractDrop,
+            downloadAll,
+            clearZip,
+            onContextMenu,
+            ctxDownload,
+            ctxDelete,
+        };
+    }
+}).mount('#app');
 </script>
 </body>
 </html>
