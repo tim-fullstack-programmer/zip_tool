@@ -290,8 +290,6 @@
                 @click="activeTab = 'extract'"
             >Извлечь архив</div>
         </div>
-
-        <!-- CREATE PANEL -->
         <div v-if="activeTab === 'create'" class="content-area">
             <div class="section-card">
                 <h3>Файлы для архива</h3>
@@ -350,7 +348,6 @@
             </div>
         </div>
 
-        <!-- EXTRACT PANEL -->
         <div v-if="activeTab === 'extract'" class="content-area">
             <div class="section-card">
                 <h3>ZIP архив</h3>
@@ -406,7 +403,6 @@
         <footer>Локальный ZIP Архиватор. Файлы не покидают браузер.</footer>
     </div>
 
-    <!-- Context Menu -->
     <div 
         class="context-menu" 
         ref="ctxMenu"
