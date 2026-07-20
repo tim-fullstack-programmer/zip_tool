@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Локальный ZIP Архиватор</title>
+    <title>Local ZIP Archiver</title>
     <script src="vue_global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -276,23 +276,23 @@
 <body>
 <div id="app" class="container">
     <div class="panel-card">
-        <h1>Локальный ZIP Архиватор</h1>
+        <h1>Local ZIP Archiver</h1>
 
         <div class="tabs">
             <div 
                 class="tab" 
                 :class="{ active: activeTab === 'create' }" 
                 @click="activeTab = 'create'"
-            >Создать архив</div>
+            >Create Archive</div>
             <div 
                 class="tab" 
                 :class="{ active: activeTab === 'extract' }" 
                 @click="activeTab = 'extract'"
-            >Извлечь архив</div>
+            >Extract Archive</div>
         </div>
         <div v-if="activeTab === 'create'" class="content-area">
             <div class="section-card">
-                <h3>Файлы для архива</h3>
+                <h3>Files for Archive</h3>
                 <div 
                     class="dropzone" 
                     :class="{ drag: createDrag }"
@@ -300,14 +300,14 @@
                     @dragleave.prevent="createDrag = false"
                     @drop.prevent="onCreateDrop"
                 >
-                    <strong>Перетащите файлы или папки сюда</strong>
+                    <strong>Drag and drop files or folders here</strong>
                     <div class="btn-row">
                         <label class="btn-label">
-                            Выбрать файлы
+                            Select Files
                             <input type="file" multiple @change="onFilePick">
                         </label>
                         <label class="btn-label">
-                            Выбрать папку
+                            Select Folder
                             <input type="file" webkitdirectory @change="onFolderPick">
                         </label>
                     </div>
@@ -325,11 +325,11 @@
             </div>
 
             <div class="section-card">
-                <h3>Создание архива</h3>
+                <h3>Archive Creation</h3>
                 <input 
                     class="text-input" 
                     v-model="zipName" 
-                    placeholder="Имя архива (например: archive.zip)"
+                    placeholder="Archive name (e.g. archive.zip)"
                 >
                 <div class="progress-box" v-if="createProgress > 0 && createProgress < 100">
                     <div class="progress-bar"><span :style="{ width: createProgress + '%' }"></span></div>
@@ -341,16 +341,16 @@
                         @click="buildZip" 
                         :disabled="!files.size"
                     >
-                        Создать ZIP
+                        Create ZIP
                     </button>
-                    <button @click="clearFiles" :disabled="!files.size">Очистить</button>
+                    <button @click="clearFiles" :disabled="!files.size">Clear</button>
                 </div>
             </div>
         </div>
 
         <div v-if="activeTab === 'extract'" class="content-area">
             <div class="section-card">
-                <h3>ZIP архив</h3>
+                <h3>ZIP Archive</h3>
                 <div 
                     class="dropzone" 
                     :class="{ drag: extractDrag }"
@@ -358,10 +358,10 @@
                     @dragleave.prevent="extractDrag = false"
                     @drop.prevent="onExtractDrop"
                 >
-                    <strong>Перетащите ZIP файл сюда</strong>
+                    <strong>Drag and drop a ZIP file here</strong>
                     <div class="btn-row">
                         <label class="btn-label">
-                            Выбрать ZIP
+                            Select ZIP
                             <input type="file" accept=".zip" @change="onZipPick">
                         </label>
                     </div>
@@ -382,7 +382,7 @@
             </div>
 
             <div class="section-card">
-                <h3>Извлечение</h3>
+                <h3>Extraction</h3>
                 <div class="progress-box" v-if="extractProgress > 0 && extractProgress < 100">
                     <div class="progress-bar"><span :style="{ width: extractProgress + '%' }"></span></div>
                     <div class="progress-label">{{ extractLabel }}</div>
@@ -393,14 +393,14 @@
                         @click="downloadAll" 
                         :disabled="!loadedZip"
                     >
-                        Скачать всё
+                        Download All
                     </button>
-                    <button @click="clearZip" :disabled="!loadedZip">Очистить</button>
+                    <button @click="clearZip" :disabled="!loadedZip">Clear</button>
                 </div>
             </div>
         </div>
 
-        <footer>Локальный ZIP Архиватор. Файлы не покидают браузер.</footer>
+        <footer>Local ZIP Archiver. Files never leave the browser.</footer>
     </div>
 
     <div 
@@ -412,8 +412,8 @@
             top: ctxY + 'px'
         }"
     >
-        <button @click="ctxDownload">Скачать</button>
-        <button @click="ctxDelete">Удалить</button>
+        <button @click="ctxDownload">Download</button>
+        <button @click="ctxDelete">Delete</button>
     </div>
 </div>
 
@@ -504,11 +504,11 @@ createApp({
                 { type: 'blob' },
                 meta => {
                     createProgress.value = meta.percent | 0;
-                    createLabel.value = 'Сжатие ' + (meta.percent | 0) + '%';
+                    createLabel.value = 'Compressing ' + (meta.percent | 0) + '%';
                 }
             );
             createProgress.value = 100;
-            createLabel.value = 'Готово!';
+            createLabel.value = 'Done!';
             saveAs(blob, zipName.value || 'archive.zip');
             setTimeout(() => createProgress.value = 0, 1000);
         }
@@ -525,11 +525,11 @@ createApp({
                 file,
                 meta => {
                     extractProgress.value = meta.percent | 0;
-                    extractLabel.value = 'Чтение ' + (meta.percent | 0) + '%';
+                    extractLabel.value = 'Reading ' + (meta.percent | 0) + '%';
                 }
             );
             extractProgress.value = 100;
-            extractLabel.value = 'Готово!';
+            extractLabel.value = 'Done!';
             setTimeout(() => extractProgress.value = 0, 1000);
         }
 
@@ -584,7 +584,6 @@ createApp({
             files.value.delete(item.path);
         }
 
-        // Close context menu on click elsewhere
         document.addEventListener('click', () => { ctxVisible.value = false; });
 
         return {
